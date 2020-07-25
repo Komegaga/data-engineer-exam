@@ -2,6 +2,7 @@ import os
 import csv
 import shutil
 import zipfile
+import pandas as pd
 
 from algorithm import Detector
 from plot import plot
@@ -10,11 +11,18 @@ from plot import plot
 def detect(path, detector):
     pred = []
     vals = []
+    data_pd = pd.read_csv(path, index_col=0)
+    q1 = data_pd['value'].quantile(.25)
+    q3 = data_pd['value'].quantile(.75)
+    iqr = q3 -q1
+    lowBound = q1 - 1.5 * iqr
+    upBound = q3 + 1.5 * iqr
+
     with open(path, newline='') as csvfile:
         rows = csv.DictReader(csvfile)
         for row in rows:
             val = row.get('value')
-            ret = detector.fit_predict(val)
+            ret = detector.fit_predict(float(val), lowBound, upBound)
             pred.append(float(ret))
             vals.append(float(val))
     return vals, pred
